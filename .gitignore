@@ -1,0 +1,13 @@
+venv/
+.termSwapVenv/
+.env
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+node_modules/
+*.log
+.vscode/
+.idea/
+*.swp
+*.swo
