@@ -153,13 +153,79 @@ def _show_network_balance(wallet, network):
 
 
 @cli.command()
-@click.argument("from_token")
-@click.argument("to_token")
 @click.argument("amount", type=float)
-def swap(from_token, to_token, amount):
-    """Swap tokens (e.g., swap ETH USDC 0.1)"""
-    console.print(f"[yellow]🔄 Swapping {amount} {from_token} → {to_token}[/yellow]")
-    console.print("[red]⚠️  Swap functionality coming soon![/red]")
+@click.argument("from_token")
+@click.argument("to_keyword")
+@click.argument("to_token")
+@click.option("--network", default="base", help="Network to use")
+@click.option("--preview", is_flag=True, help="Show swap preview only")
+def swap(amount, from_token, to_keyword, to_token, network, preview):
+    """Swap tokens with natural syntax\n\n    \b\n    Examples:\n      swap 0.1 ETH to USDC --preview\n      swap 10 CELO to G$ --network celo --preview\n      swap 100 USDC to USDT --network ethereum\n"""
+    from .swap_preview import SwapPreview
+
+    # Validate 'to' keyword
+    if to_keyword.lower() != "to":
+        console.print(
+            "[red]❌ Invalid syntax. Use: swap <amount> <from_token> to <to_token>[/red]"
+        )
+        console.print("[yellow]Example: swap 10 CELO to G$ --network celo[/yellow]")
+        return
+
+    console.print(
+        f"[yellow]🔄 {amount} {from_token} → {to_token} on {network.upper()}[/yellow]"
+    )
+
+    # Get swap quote
+    swap_preview = SwapPreview()
+    quote = swap_preview.get_swap_quote(from_token, to_token, amount, network)
+
+    if not quote:
+        console.print(
+            f"[red]❌ Invalid swap: {from_token} or {to_token} not available on {network.upper()}[/red]"
+        )
+        console.print(
+            f"[yellow]Available tokens on {network.upper()}: {', '.join(_get_tokens_for_network(network).keys())}[/yellow]"
+        )
+        return
+
+    # Display swap preview
+    _show_swap_preview(quote)
+
+    if preview:
+        console.print(
+            "[blue]💡 This was a preview only. Remove --preview to execute.[/blue]"
+        )
+    else:
+        console.print("[red]⚠️  Actual swap execution coming soon![/red]")
+
+
+def _show_swap_preview(quote: dict):
+    """Display swap preview in a nice table"""
+    table = Table(title="🔄 Swap Preview", show_header=False)
+    table.add_column("Field", style="cyan")
+    table.add_column("Value", style="green")
+
+    table.add_row("From", f"{quote['from_amount']:.6f} {quote['from_token']}")
+    table.add_row(
+        "To (Estimated)", f"{quote['estimated_output']:.6f} {quote['to_token']}"
+    )
+    table.add_row("Minimum Received", f"{quote['min_output']:.6f} {quote['to_token']}")
+    table.add_row(
+        "Exchange Rate",
+        f"1 {quote['from_token']} = {quote['rate']:.6f} {quote['to_token']}",
+    )
+    table.add_row("Network", quote["network"].upper())
+    table.add_row("DEX Fee", f"{quote['fee_percentage']:.1f}%")
+    table.add_row("Slippage Tolerance", f"{quote['slippage_percentage']:.1f}%")
+    table.add_row("Gas Limit", f"{quote['gas_estimate']:,}")
+    table.add_row("Gas Price", f"{quote['gas_price_gwei']:.1f} gwei")
+    table.add_row("Gas Cost", f"${quote['gas_cost_usd']:.2f}")
+
+    # Calculate total cost
+    total_cost = quote["from_amount"] * quote["from_price"] + quote["gas_cost_usd"]
+    table.add_row("[bold]Total Cost[/bold]", f"[bold]${total_cost:.2f}[/bold]")
+
+    console.print(table)
 
 
 if __name__ == "__main__":

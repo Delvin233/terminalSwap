@@ -1,15 +1,16 @@
-# terminalSwap 🚀
+# terminalSwap
 
 Swapping and transferring crypto through the terminal - inspired by Primeagen's terminal coffee shop!
 
-## Features ✨
+## Features
+
 - Multi-chain portfolio tracking (Base, Ethereum, Celo)
 - Real-time token prices via CoinGecko
 - Beautiful terminal UI with Rich
 - Support for major tokens (ETH, USDC, USDT, CELO, G$, DEGEN, BRETT)
 - CLI and interactive modes
 
-## Quick Start 🏃‍♂️
+## Quick Start
 
 ```bash
 # Setup
@@ -27,15 +28,18 @@ python main.py balance --all        # Check all networks
 python main.py swap ETH USDC 0.1    # Swap (coming soon)
 ```
 
-## Supported Networks 🌐
+## Supported Networks
+
 - **Base** - ETH, USDC, USDT, WETH, DEGEN, BRETT
-- **Ethereum** - ETH, USDC, USDT, WETH  
+- **Ethereum** - ETH, USDC, USDT, WETH
 - **Celo** - CELO, cUSD, cEUR, USDC, USDT, G$
 
-## Security 🔒
+## Security
+
 See [SECURITY.md](SECURITY.md) for important security guidelines.
 
-## Roadmap 🗺️
+## Roadmap
+
 - [x] Multi-chain balance checking
 - [x] Real-time price fetching
 - [ ] DEX integration (Uniswap V3)
