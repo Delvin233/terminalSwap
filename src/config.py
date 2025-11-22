@@ -13,7 +13,7 @@ class NetworkConfig:
 NETWORKS: Dict[str, NetworkConfig] = {
     "base": NetworkConfig(
         name="Base",
-        rpc_url="https://mainnet.base.org",
+        rpc_url="https://base-mainnet.g.alchemy.com/v2/demo",
         chain_id=8453,
         native_token="ETH",
     ),

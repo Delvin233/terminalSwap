@@ -220,6 +220,7 @@ def _show_swap_preview(quote: dict):
     table.add_row("Gas Limit", f"{quote['gas_estimate']:,}")
     table.add_row("Gas Price", f"{quote['gas_price_gwei']:.1f} gwei")
     table.add_row("Gas Cost", f"${quote['gas_cost_usd']:.2f}")
+    table.add_row("Quote Source", quote.get("quote_source", "Price API"))
 
     # Calculate total cost
     total_cost = quote["from_amount"] * quote["from_price"] + quote["gas_cost_usd"]
