@@ -49,6 +49,91 @@ class Wallet:
     def is_connected(self) -> bool:
         """Check if connected to network"""
         try:
-            return self.w3.is_connected()
-        except Exception:
+            connected = self.w3.is_connected()
+            if not connected:
+                print(f"DEBUG: Failed to connect to {self.network_config.rpc_url}")
+            return connected
+        except Exception as e:
+            print(f"DEBUG: Connection error: {e}")
             return False
+
+    def send_eth(self, to_address: str, amount: float) -> str:
+        """Send native ETH to an address"""
+        try:
+            # Convert amount to wei
+            amount_wei = self.w3.to_wei(amount, "ether")
+
+            # Convert to checksum address
+            to_address = self.w3.to_checksum_address(to_address)
+
+            # Build transaction
+            transaction = {
+                "to": to_address,
+                "value": amount_wei,
+                "gas": 21000,  # Standard ETH transfer gas
+                "gasPrice": self.w3.eth.gas_price,
+                "nonce": self.w3.eth.get_transaction_count(self.address, "pending"),
+            }
+
+            # Sign and send transaction
+            signed_tx = self.w3.eth.account.sign_transaction(
+                transaction, self.account.key
+            )
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+
+            return tx_hash.hex()
+
+        except Exception as e:
+            print(f"ETH transfer error: {e}")
+            return None
+
+    def send_token(self, token_address: str, to_address: str, amount: float) -> str:
+        """Send ERC20 token to an address"""
+        try:
+            # Convert addresses to checksum format
+            token_address = self.w3.to_checksum_address(token_address)
+            to_address = self.w3.to_checksum_address(to_address)
+
+            # ERC20 transfer ABI
+            erc20_abi = [
+                {
+                    "inputs": [
+                        {"name": "to", "type": "address"},
+                        {"name": "amount", "type": "uint256"},
+                    ],
+                    "name": "transfer",
+                    "outputs": [{"name": "", "type": "bool"}],
+                    "type": "function",
+                }
+            ]
+
+            # Get token decimals (assume 6 for USDC, 18 for others)
+            decimals = 6 if "usdc" in token_address.lower() else 18
+            amount_wei = int(amount * 10**decimals)
+
+            # Create contract instance
+            token_contract = self.w3.eth.contract(address=token_address, abi=erc20_abi)
+
+            # Build transaction
+            transaction = token_contract.functions.transfer(
+                to_address, amount_wei
+            ).build_transaction(
+                {
+                    "from": self.address,
+                    "gas": 100000,  # Standard ERC20 transfer gas
+                    "gasPrice": self.w3.eth.gas_price,
+                    "nonce": self.w3.eth.get_transaction_count(self.address, "pending"),
+                }
+            )
+
+            # Sign and send transaction
+            signed_tx = self.w3.eth.account.sign_transaction(
+                transaction, self.account.key
+            )
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+
+            return tx_hash.hex()
+
+        except Exception as e:
+            print(f"Token transfer error: {e}")
+            return None
