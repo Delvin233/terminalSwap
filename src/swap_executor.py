@@ -141,11 +141,12 @@ class SwapExecutor:
             current_balance = self.wallet.get_balance(balance_address)
             if float(current_balance) < amount:
                 print(
-                    f"Insufficient balance. You have {current_balance:.6f} {from_token}, need {amount}"
+                    f"Insufficient balance. You have {current_balance:.6f} {from_token}, "
+                    f"need {amount}"
                 )
                 return None
 
-            # Try different fee tiers for Base Sepolia (testnet might have different pools)
+            # Try different fee tiers for Base Sepolia
             fee_tiers = [3000, 500, 10000] if self.network == "base-sepolia" else [3000]
 
             # Swap parameters - try 0.3% fee first, then 0.05%, then 1%

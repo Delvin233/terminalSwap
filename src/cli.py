@@ -184,7 +184,12 @@ def _show_network_balance(wallet, network):
 )
 @click.option("--preview", is_flag=True, help="Show transfer preview only")
 def send(amount, token, to_keyword, address, network, preview):
-    """Send tokens to an address\n\n    \b\n    Examples:\n      send 0.01 ETH to 0x1234...5678 --network base-sepolia --preview\n      send 10 USDC to 0x1234...5678 --network base\n"""
+    """Send tokens to an address
+
+    Examples:
+      send 0.01 ETH to 0x1234...5678 --network base-sepolia --preview
+      send 10 USDC to 0x1234...5678 --network base
+    """
 
     # Validate 'to' keyword
     if to_keyword.lower() != "to":
@@ -201,17 +206,17 @@ def send(amount, token, to_keyword, address, network, preview):
         )
         return
 
+    addr_short = f"{address[:6]}...{address[-4:]}"
     console.print(
-        f"[yellow]📤 Sending {amount} {token} to {address[:6]}...{address[-4:]} on {network.upper()}[/yellow]"
+        f"[yellow]📤 Sending {amount} {token} to {addr_short} on {network.upper()}[/yellow]"
     )
 
     # Check if token exists on network
     token_addresses = _get_tokens_for_network(network)
     if token.upper() not in token_addresses:
         console.print(f"[red]❌ {token} not available on {network.upper()}[/red]")
-        console.print(
-            f"[yellow]Available tokens: {', '.join(token_addresses.keys())}[/yellow]"
-        )
+        available = ", ".join(token_addresses.keys())
+        console.print(f"[yellow]Available tokens: {available}[/yellow]")
         return
 
     # Check balance
@@ -224,9 +229,11 @@ def send(amount, token, to_keyword, address, network, preview):
     current_balance = wallet.get_balance(token_address)
 
     if float(current_balance) < amount:
-        console.print(
-            f"[red]❌ Insufficient balance! You have {current_balance:.6f} {token}, need {amount}[/red]"
+        msg = (
+            f"[red]❌ Insufficient balance! "
+            f"You have {current_balance:.6f} {token}, need {amount}[/red]"
         )
+        console.print(msg)
         return
 
     # Show preview
@@ -291,7 +298,13 @@ def send(amount, token, to_keyword, address, network, preview):
 )
 @click.option("--preview", is_flag=True, help="Show swap preview only")
 def swap(amount, from_token, to_keyword, to_token, network, preview):
-    """Swap tokens with natural syntax\n\n    \b\n    Examples:\n      swap 0.1 ETH to USDC --preview\n      swap 10 CELO to G$ --network celo --preview\n      swap 0.01 ETH to USDC --network base-sepolia (mock swap)\n"""
+    """Swap tokens with natural syntax
+
+    Examples:
+      swap 0.1 ETH to USDC --preview
+      swap 10 CELO to G$ --network celo --preview
+      swap 0.01 ETH to USDC --network base-sepolia (mock)
+    """
     from .swap_preview import SwapPreview
 
     # Validate 'to' keyword
@@ -299,7 +312,7 @@ def swap(amount, from_token, to_keyword, to_token, network, preview):
         console.print(
             "[red]❌ Invalid syntax. Use: swap <amount> <from_token> to <to_token>[/red]"
         )
-        console.print("[yellow]Example: swap 10 CELO to G$ --network celo[/yellow]")
+        console.print("[yellow]Example: swap 10 CELO to G$[/yellow]")
         return
 
     console.print(
@@ -311,11 +324,14 @@ def swap(amount, from_token, to_keyword, to_token, network, preview):
     quote = swap_preview.get_swap_quote(from_token, to_token, amount, network)
 
     if not quote:
-        console.print(
-            f"[red]❌ Invalid swap: {from_token} or {to_token} not available on {network.upper()}[/red]"
+        msg = (
+            f"[red]❌ Invalid swap: {from_token} or {to_token} "
+            f"not available on {network.upper()}[/red]"
         )
+        console.print(msg)
+        available_tokens = ", ".join(_get_tokens_for_network(network).keys())
         console.print(
-            f"[yellow]Available tokens on {network.upper()}: {', '.join(_get_tokens_for_network(network).keys())}[/yellow]"
+            f"[yellow]Available tokens on {network.upper()}: {available_tokens}[/yellow]"
         )
         return
 
@@ -342,23 +358,26 @@ def swap(amount, from_token, to_keyword, to_token, network, preview):
                 "\n[bold red]⚠️  You are about to execute a real swap![/bold red]"
             )
             console.print(f"Your balance: {current_balance:.6f} {from_token}")
+            estimated = quote["estimated_output"]
             console.print(
-                f"Swapping: {amount} {from_token} → ~{quote['estimated_output']:.6f} {to_token}"
+                f"Swapping: {amount} {from_token} → ~{estimated:.6f} {to_token}"
             )
             console.print(f"Minimum received: {quote['min_output']:.6f} {to_token}")
             console.print(f"Gas cost: ${quote['gas_cost_usd']:.2f}")
 
             if float(current_balance) < amount:
+                needed = amount - float(current_balance)
                 console.print(
-                    f"[red]❌ Insufficient balance! You need {amount - float(current_balance):.6f} more {from_token}[/red]"
+                    f"[red]❌ Insufficient balance! You need {needed:.6f} more {from_token}[/red]"
                 )
                 return
         else:
             console.print(
                 "\n[bold red]⚠️  You are about to execute a real swap![/bold red]"
             )
+            estimated = quote["estimated_output"]
             console.print(
-                f"Swapping: {amount} {from_token} → ~{quote['estimated_output']:.6f} {to_token}"
+                f"Swapping: {amount} {from_token} → ~{estimated:.6f} {to_token}"
             )
             console.print(f"Minimum received: {quote['min_output']:.6f} {to_token}")
             console.print(f"Gas cost: ${quote['gas_cost_usd']:.2f}")
