@@ -201,8 +201,9 @@ def send(amount, token, to_keyword, address, network, preview):
         )
         return
 
+    addr_short = f"{address[:6]}...{address[-4:]}"
     console.print(
-        f"[yellow]📤 Sending {amount} {token} to {address[:6]}...{address[-4:]} on {network.upper()}[/yellow]"
+        f"[yellow]📤 Sending {amount} {token} to {addr_short} on {network.upper()}[/yellow]"
     )
 
     # Check if token exists on network
@@ -223,9 +224,8 @@ def send(amount, token, to_keyword, address, network, preview):
     current_balance = wallet.get_balance(token_address)
 
     if float(current_balance) < amount:
-        console.print(
-            f"[red]❌ Insufficient balance! You have {current_balance:.6f} {token}, need {amount}[/red]"
-        )
+        msg = f"[red]❌ Insufficient balance! You have {current_balance:.6f} {token}, need {amount}[/red]"
+        console.print(msg)
         return
 
     # Show preview
@@ -310,9 +310,8 @@ def swap(amount, from_token, to_keyword, to_token, network, preview):
     quote = swap_preview.get_swap_quote(from_token, to_token, amount, network)
 
     if not quote:
-        console.print(
-            f"[red]❌ Invalid swap: {from_token} or {to_token} not available on {network.upper()}[/red]"
-        )
+        msg = f"[red]❌ Invalid swap: {from_token} or {to_token} not available on {network.upper()}[/red]"
+        console.print(msg)
         available_tokens = ", ".join(_get_tokens_for_network(network).keys())
         console.print(
             f"[yellow]Available tokens on {network.upper()}: {available_tokens}[/yellow]"
