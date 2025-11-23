@@ -7,7 +7,7 @@ python-dotenv==1.0.0
 requests==2.32.4
 eth-typing==3.5.2
 eth-utils==2.3.1
-setuptools>=65.0.0
+setuptools>=78.1.1
 
 # Development dependencies
 pytest==7.4.3
