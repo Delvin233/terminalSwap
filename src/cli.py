@@ -209,9 +209,8 @@ def send(amount, token, to_keyword, address, network, preview):
     token_addresses = _get_tokens_for_network(network)
     if token.upper() not in token_addresses:
         console.print(f"[red]❌ {token} not available on {network.upper()}[/red]")
-        console.print(
-            f"[yellow]Available tokens: {', '.join(token_addresses.keys())}[/yellow]"
-        )
+        available = ", ".join(token_addresses.keys())
+        console.print(f"[yellow]Available tokens: {available}[/yellow]")
         return
 
     # Check balance
@@ -314,8 +313,9 @@ def swap(amount, from_token, to_keyword, to_token, network, preview):
         console.print(
             f"[red]❌ Invalid swap: {from_token} or {to_token} not available on {network.upper()}[/red]"
         )
+        available_tokens = ", ".join(_get_tokens_for_network(network).keys())
         console.print(
-            f"[yellow]Available tokens on {network.upper()}: {', '.join(_get_tokens_for_network(network).keys())}[/yellow]"
+            f"[yellow]Available tokens on {network.upper()}: {available_tokens}[/yellow]"
         )
         return
 
@@ -342,23 +342,26 @@ def swap(amount, from_token, to_keyword, to_token, network, preview):
                 "\n[bold red]⚠️  You are about to execute a real swap![/bold red]"
             )
             console.print(f"Your balance: {current_balance:.6f} {from_token}")
+            estimated = quote["estimated_output"]
             console.print(
-                f"Swapping: {amount} {from_token} → ~{quote['estimated_output']:.6f} {to_token}"
+                f"Swapping: {amount} {from_token} → ~{estimated:.6f} {to_token}"
             )
             console.print(f"Minimum received: {quote['min_output']:.6f} {to_token}")
             console.print(f"Gas cost: ${quote['gas_cost_usd']:.2f}")
 
             if float(current_balance) < amount:
+                needed = amount - float(current_balance)
                 console.print(
-                    f"[red]❌ Insufficient balance! You need {amount - float(current_balance):.6f} more {from_token}[/red]"
+                    f"[red]❌ Insufficient balance! You need {needed:.6f} more {from_token}[/red]"
                 )
                 return
         else:
             console.print(
                 "\n[bold red]⚠️  You are about to execute a real swap![/bold red]"
             )
+            estimated = quote["estimated_output"]
             console.print(
-                f"Swapping: {amount} {from_token} → ~{quote['estimated_output']:.6f} {to_token}"
+                f"Swapping: {amount} {from_token} → ~{estimated:.6f} {to_token}"
             )
             console.print(f"Minimum received: {quote['min_output']:.6f} {to_token}")
             console.print(f"Gas cost: ${quote['gas_cost_usd']:.2f}")

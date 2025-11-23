@@ -145,7 +145,7 @@ class SwapExecutor:
                 )
                 return None
 
-            # Try different fee tiers for Base Sepolia (testnet might have different pools)
+            # Try different fee tiers for Base Sepolia
             fee_tiers = [3000, 500, 10000] if self.network == "base-sepolia" else [3000]
 
             # Swap parameters - try 0.3% fee first, then 0.05%, then 1%
