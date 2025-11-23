@@ -184,7 +184,12 @@ def _show_network_balance(wallet, network):
 )
 @click.option("--preview", is_flag=True, help="Show transfer preview only")
 def send(amount, token, to_keyword, address, network, preview):
-    """Send tokens to an address\n\n    \b\n    Examples:\n      send 0.01 ETH to 0x1234...5678 --network base-sepolia --preview\n      send 10 USDC to 0x1234...5678 --network base\n"""
+    """Send tokens to an address
+
+    Examples:
+      send 0.01 ETH to 0x1234...5678 --network base-sepolia --preview
+      send 10 USDC to 0x1234...5678 --network base
+    """
 
     # Validate 'to' keyword
     if to_keyword.lower() != "to":
@@ -224,7 +229,10 @@ def send(amount, token, to_keyword, address, network, preview):
     current_balance = wallet.get_balance(token_address)
 
     if float(current_balance) < amount:
-        msg = f"[red]❌ Insufficient balance! You have {current_balance:.6f} {token}, need {amount}[/red]"
+        msg = (
+            f"[red]❌ Insufficient balance! "
+            f"You have {current_balance:.6f} {token}, need {amount}[/red]"
+        )
         console.print(msg)
         return
 
@@ -290,7 +298,13 @@ def send(amount, token, to_keyword, address, network, preview):
 )
 @click.option("--preview", is_flag=True, help="Show swap preview only")
 def swap(amount, from_token, to_keyword, to_token, network, preview):
-    """Swap tokens with natural syntax\n\n    \b\n    Examples:\n      swap 0.1 ETH to USDC --preview\n      swap 10 CELO to G$ --network celo --preview\n      swap 0.01 ETH to USDC --network base-sepolia (mock swap)\n"""
+    """Swap tokens with natural syntax
+
+    Examples:
+      swap 0.1 ETH to USDC --preview
+      swap 10 CELO to G$ --network celo --preview
+      swap 0.01 ETH to USDC --network base-sepolia (mock)
+    """
     from .swap_preview import SwapPreview
 
     # Validate 'to' keyword
@@ -298,7 +312,7 @@ def swap(amount, from_token, to_keyword, to_token, network, preview):
         console.print(
             "[red]❌ Invalid syntax. Use: swap <amount> <from_token> to <to_token>[/red]"
         )
-        console.print("[yellow]Example: swap 10 CELO to G$ --network celo[/yellow]")
+        console.print("[yellow]Example: swap 10 CELO to G$[/yellow]")
         return
 
     console.print(
@@ -310,7 +324,10 @@ def swap(amount, from_token, to_keyword, to_token, network, preview):
     quote = swap_preview.get_swap_quote(from_token, to_token, amount, network)
 
     if not quote:
-        msg = f"[red]❌ Invalid swap: {from_token} or {to_token} not available on {network.upper()}[/red]"
+        msg = (
+            f"[red]❌ Invalid swap: {from_token} or {to_token} "
+            f"not available on {network.upper()}[/red]"
+        )
         console.print(msg)
         available_tokens = ", ".join(_get_tokens_for_network(network).keys())
         console.print(

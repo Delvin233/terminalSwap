@@ -141,7 +141,8 @@ class SwapExecutor:
             current_balance = self.wallet.get_balance(balance_address)
             if float(current_balance) < amount:
                 print(
-                    f"Insufficient balance. You have {current_balance:.6f} {from_token}, need {amount}"
+                    f"Insufficient balance. You have {current_balance:.6f} {from_token}, "
+                    f"need {amount}"
                 )
                 return None
 
