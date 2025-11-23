@@ -2,6 +2,7 @@
 Mock swap functionality for testing - simulates swaps without using DEX
 This is useful for testing the swap flow on testnets where DEX pools might not exist
 """
+
 from typing import Optional
 from .wallet import Wallet
 

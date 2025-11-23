@@ -1,4 +1,5 @@
 """Basic tests for terminalSwap functionality"""
+
 from unittest.mock import Mock, patch
 
 
