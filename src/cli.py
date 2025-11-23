@@ -11,15 +11,31 @@ console = Console()
 
 @click.group()
 def cli():
-    """Terminal-based crypto swapping tool"""
+    """🚀 terminalSwap - Multi-chain crypto swapping and transfers via terminal
+
+    \b
+    Features:
+    • Multi-chain portfolio tracking (Base, Ethereum, Celo)
+    • Real-time token prices via CoinGecko
+    • Token transfers and swapping
+    • Testnet support (Base Sepolia)
+
+    \b
+    Examples:
+      python main.py balance --all
+      python main.py send 0.01 ETH to 0x1234...5678 --network base-sepolia
+      python main.py swap 0.1 ETH to USDC --preview
+    """
     pass
 
 
 @cli.command()
-@click.option("--network", default="base", help="Network to use (base, ethereum, celo)")
+@click.option(
+    "--network", default="base", help="Network: base, ethereum, celo, base-sepolia"
+)
 @click.option("--all", is_flag=True, help="Check balances on all networks")
 def balance(network, all):
-    """Check wallet balance"""
+    """Check wallet balance across networks"""
     try:
         if all:
             # Check all networks in unified table
@@ -102,6 +118,12 @@ def _get_tokens_for_network(network):
             "DEGEN": "0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed",
             "BRETT": "0x532f27101965dd16442E59d40670FaF5eBB142E4",
         }
+    elif network == "base-sepolia":
+        return {
+            "ETH": "0x0000000000000000000000000000000000000000",
+            "WETH": "0x4200000000000000000000000000000000000006",
+            "USDC": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",  # Base Sepolia USDC
+        }
     elif network == "celo":
         return {
             "CELO": "0x0000000000000000000000000000000000000000",
@@ -154,13 +176,122 @@ def _show_network_balance(wallet, network):
 
 @cli.command()
 @click.argument("amount", type=float)
+@click.argument("token")
+@click.argument("to_keyword")
+@click.argument("address")
+@click.option(
+    "--network", default="base", help="Network: base, ethereum, celo, base-sepolia"
+)
+@click.option("--preview", is_flag=True, help="Show transfer preview only")
+def send(amount, token, to_keyword, address, network, preview):
+    """Send tokens to an address\n\n    \b\n    Examples:\n      send 0.01 ETH to 0x1234...5678 --network base-sepolia --preview\n      send 10 USDC to 0x1234...5678 --network base\n"""
+
+    # Validate 'to' keyword
+    if to_keyword.lower() != "to":
+        console.print(
+            "[red]❌ Invalid syntax. Use: send <amount> <token> to <address>[/red]"
+        )
+        console.print("[yellow]Example: send 0.01 ETH to 0x1234...5678[/yellow]")
+        return
+
+    # Validate address format
+    if not address.startswith("0x") or len(address) != 42:
+        console.print(
+            "[red]❌ Invalid address format. Must be 42 characters starting with 0x[/red]"
+        )
+        return
+
+    console.print(
+        f"[yellow]📤 Sending {amount} {token} to {address[:6]}...{address[-4:]} on {network.upper()}[/yellow]"
+    )
+
+    # Check if token exists on network
+    token_addresses = _get_tokens_for_network(network)
+    if token.upper() not in token_addresses:
+        console.print(f"[red]❌ {token} not available on {network.upper()}[/red]")
+        console.print(
+            f"[yellow]Available tokens: {', '.join(token_addresses.keys())}[/yellow]"
+        )
+        return
+
+    # Check balance
+    wallet = Wallet(network)
+    if not wallet.is_connected():
+        console.print("[red]❌ Failed to connect to network[/red]")
+        return
+
+    token_address = token_addresses[token.upper()]
+    current_balance = wallet.get_balance(token_address)
+
+    if float(current_balance) < amount:
+        console.print(
+            f"[red]❌ Insufficient balance! You have {current_balance:.6f} {token}, need {amount}[/red]"
+        )
+        return
+
+    # Show preview
+    console.print(
+        f"\n[green]✅ Balance check passed: {current_balance:.6f} {token}[/green]"
+    )
+    console.print(f"[yellow]Sending: {amount} {token}[/yellow]")
+    console.print(f"[yellow]To: {address}[/yellow]")
+    console.print(f"[yellow]Network: {network.upper()}[/yellow]")
+
+    if preview:
+        console.print(
+            "[blue]💡 This was a preview only. Remove --preview to execute.[/blue]"
+        )
+        return
+
+    # Confirm before sending
+    console.print("\n[bold red]⚠️  You are about to send real tokens![/bold red]")
+    confirm = input("\nProceed with transfer? (yes/no): ").lower().strip()
+
+    if confirm not in ["yes", "y"]:
+        console.print("[yellow]Transfer cancelled.[/yellow]")
+        return
+
+    # Execute transfer
+    console.print("[yellow]📤 Executing transfer...[/yellow]")
+
+    try:
+        if token.upper() == "ETH":
+            # Send native ETH
+            tx_hash = wallet.send_eth(address, amount)
+        else:
+            # Send ERC20 token
+            tx_hash = wallet.send_token(token_address, address, amount)
+
+        if tx_hash:
+            explorer_urls = {
+                "base": "https://basescan.org/tx/",
+                "base-sepolia": "https://sepolia.basescan.org/tx/",
+                "ethereum": "https://etherscan.io/tx/",
+            }
+            explorer_url = explorer_urls.get(network, "")
+            console.print(f"[green]✅ Transfer sent! Transaction: {tx_hash}[/green]")
+            if explorer_url:
+                console.print(
+                    f"[blue]🔗 View on explorer: {explorer_url}{tx_hash}[/blue]"
+                )
+        else:
+            console.print("[red]❌ Transfer failed![/red]")
+
+    except Exception as e:
+        console.print(f"[red]❌ Transfer error: {e}[/red]")
+
+
+@cli.command()
+@click.argument("amount", type=float)
 @click.argument("from_token")
 @click.argument("to_keyword")
 @click.argument("to_token")
-@click.option("--network", default="base", help="Network to use")
+@click.option(
+    "--network", default="base", help="Network: base, ethereum, celo, base-sepolia"
+)
 @click.option("--preview", is_flag=True, help="Show swap preview only")
 def swap(amount, from_token, to_keyword, to_token, network, preview):
-    """Swap tokens with natural syntax\n\n    \b\n    Examples:\n      swap 0.1 ETH to USDC --preview\n      swap 10 CELO to G$ --network celo --preview\n      swap 100 USDC to USDT --network ethereum\n"""
+    """Swap tokens with natural syntax\n\n    \b\n    Examples:\n      swap 0.1 ETH to USDC --preview\n      swap 10 CELO to G$ --network celo --preview\n      swap 0.01 ETH to USDC --network base-sepolia (mock swap)\n"""
     from .swap_preview import SwapPreview
 
     # Validate 'to' keyword
@@ -196,7 +327,86 @@ def swap(amount, from_token, to_keyword, to_token, network, preview):
             "[blue]💡 This was a preview only. Remove --preview to execute.[/blue]"
         )
     else:
-        console.print("[red]⚠️  Actual swap execution coming soon![/red]")
+        # Check balance before confirming
+        from .wallet import Wallet
+
+        wallet = Wallet(network)
+        token_addresses = _get_tokens_for_network(network)
+        from_address = token_addresses.get(from_token.upper())
+
+        if from_address:
+            current_balance = wallet.get_balance(from_address)
+
+            # Confirm before executing
+            console.print(
+                "\n[bold red]⚠️  You are about to execute a real swap![/bold red]"
+            )
+            console.print(f"Your balance: {current_balance:.6f} {from_token}")
+            console.print(
+                f"Swapping: {amount} {from_token} → ~{quote['estimated_output']:.6f} {to_token}"
+            )
+            console.print(f"Minimum received: {quote['min_output']:.6f} {to_token}")
+            console.print(f"Gas cost: ${quote['gas_cost_usd']:.2f}")
+
+            if float(current_balance) < amount:
+                console.print(
+                    f"[red]❌ Insufficient balance! You need {amount - float(current_balance):.6f} more {from_token}[/red]"
+                )
+                return
+        else:
+            console.print(
+                "\n[bold red]⚠️  You are about to execute a real swap![/bold red]"
+            )
+            console.print(
+                f"Swapping: {amount} {from_token} → ~{quote['estimated_output']:.6f} {to_token}"
+            )
+            console.print(f"Minimum received: {quote['min_output']:.6f} {to_token}")
+            console.print(f"Gas cost: ${quote['gas_cost_usd']:.2f}")
+
+        confirm = input("\nProceed with swap? (yes/no): ").lower().strip()
+
+        if confirm not in ["yes", "y"]:
+            console.print("[yellow]Swap cancelled.[/yellow]")
+            return
+
+        # Execute the actual swap
+        console.print("[yellow]🔄 Executing swap...[/yellow]")
+
+        # Use mock swap for testnets, real swap for mainnets
+        if network == "base-sepolia":
+            from .mock_swap import MockSwapExecutor
+
+            executor = MockSwapExecutor(network)
+            tx_hash = executor.execute_mock_swap(
+                from_token, to_token, amount, quote["min_output"]
+            )
+        else:
+            from .swap_executor import SwapExecutor
+
+            executor = SwapExecutor(network)
+            tx_hash = executor.execute_swap(
+                from_token, to_token, amount, quote["min_output"]
+            )
+
+        if tx_hash:
+            explorer_urls = {
+                "base": "https://basescan.org/tx/",
+                "base-sepolia": "https://sepolia.basescan.org/tx/",
+                "ethereum": "https://etherscan.io/tx/",
+            }
+            explorer_url = explorer_urls.get(network, "")
+            console.print(f"[green]✅ Swap executed! Transaction: {tx_hash}[/green]")
+            if explorer_url:
+                console.print(
+                    f"[blue]🔗 View on explorer: {explorer_url}{tx_hash}[/blue]"
+                )
+        else:
+            console.print(
+                f"[red]❌ Swap failed! Swapping not supported on {network.upper()} network.[/red]"
+            )
+            console.print(
+                "[yellow]💡 Try Base or Ethereum networks for swapping.[/yellow]"
+            )
 
 
 def _show_swap_preview(quote: dict):

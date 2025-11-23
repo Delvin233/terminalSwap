@@ -1,5 +1,9 @@
+import os
 from dataclasses import dataclass
 from typing import Dict
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 @dataclass
@@ -13,13 +17,19 @@ class NetworkConfig:
 NETWORKS: Dict[str, NetworkConfig] = {
     "base": NetworkConfig(
         name="Base",
-        rpc_url="https://base-mainnet.g.alchemy.com/v2/demo",
+        rpc_url=os.getenv("BASE_RPC_URL", "https://mainnet.base.org"),
         chain_id=8453,
+        native_token="ETH",
+    ),
+    "base-sepolia": NetworkConfig(
+        name="Base Sepolia",
+        rpc_url=os.getenv("BASE_SEPOLIA_RPC_URL", "https://sepolia.base.org"),
+        chain_id=84532,
         native_token="ETH",
     ),
     "ethereum": NetworkConfig(
         name="Ethereum",
-        rpc_url="https://eth.llamarpc.com",
+        rpc_url=os.getenv("ETHEREUM_RPC_URL", "https://eth.llamarpc.com"),
         chain_id=1,
         native_token="ETH",
     ),

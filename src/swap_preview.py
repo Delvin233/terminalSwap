@@ -112,6 +112,7 @@ class SwapPreview:
         gas_limits = {
             "ethereum": 200000,  # Higher gas on mainnet
             "base": 150000,  # Lower gas on L2
+            "base-sepolia": 150000,  # Same as base
             "celo": 120000,  # Even lower on Celo
         }
         return gas_limits.get(network, 150000)
@@ -125,6 +126,11 @@ class SwapPreview:
                 "gas_cost_usd": 11.0,
             },
             "base": {"gas_limit": 150000, "gas_price_gwei": 0.1, "gas_cost_usd": 0.08},
+            "base-sepolia": {
+                "gas_limit": 150000,
+                "gas_price_gwei": 0.0,
+                "gas_cost_usd": 0.00,
+            },
             "celo": {"gas_limit": 120000, "gas_price_gwei": 0.5, "gas_cost_usd": 0.02},
         }
         return fallback_data.get(network, fallback_data["base"])
