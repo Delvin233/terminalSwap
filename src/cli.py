@@ -270,6 +270,11 @@ def send(amount, token, to_keyword, address, network, preview):
             tx_hash = wallet.send_token(token_address, address, amount)
 
         if tx_hash:
+            from .notifications import NotificationManager
+
+            notifier = NotificationManager()
+            notifier.notify_transaction_success("Transfer", f"{amount}", token, tx_hash)
+
             explorer_urls = {
                 "base": "https://basescan.org/tx/",
                 "base-sepolia": "https://sepolia.basescan.org/tx/",
@@ -282,9 +287,19 @@ def send(amount, token, to_keyword, address, network, preview):
                     f"[blue]🔗 View on explorer: {explorer_url}{tx_hash}[/blue]"
                 )
         else:
+            from .notifications import NotificationManager
+
+            notifier = NotificationManager()
+            notifier.notify_transaction_failed(
+                "Transfer", f"{amount}", token, "Transaction failed"
+            )
             console.print("[red]❌ Transfer failed![/red]")
 
     except Exception as e:
+        from .notifications import NotificationManager
+
+        notifier = NotificationManager()
+        notifier.notify_transaction_failed("Transfer", f"{amount}", token, str(e))
         console.print(f"[red]❌ Transfer error: {e}[/red]")
 
 
@@ -408,6 +423,14 @@ def swap(amount, from_token, to_keyword, to_token, network, preview):
             )
 
         if tx_hash:
+            from .notifications import NotificationManager
+
+            notifier = NotificationManager()
+            estimated = quote["estimated_output"]
+            notifier.notify_swap_success(
+                f"{amount}", from_token, f"{estimated:.6f}", to_token, tx_hash
+            )
+
             explorer_urls = {
                 "base": "https://basescan.org/tx/",
                 "base-sepolia": "https://sepolia.basescan.org/tx/",
@@ -420,6 +443,12 @@ def swap(amount, from_token, to_keyword, to_token, network, preview):
                     f"[blue]🔗 View on explorer: {explorer_url}{tx_hash}[/blue]"
                 )
         else:
+            from .notifications import NotificationManager
+
+            notifier = NotificationManager()
+            notifier.notify_swap_failed(
+                f"{amount}", from_token, to_token, "Swapping not supported on network"
+            )
             console.print(
                 f"[red]❌ Swap failed! Swapping not supported on {network.upper()} network.[/red]"
             )
