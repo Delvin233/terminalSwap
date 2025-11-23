@@ -55,7 +55,6 @@ class NotificationManager:
                 app_icon="",  # Empty string instead of None
                 timeout=5,  # 5 seconds
             )
-        except Exception as e:
-            # Fallback - just print if notifications fail
+        except Exception:
+            # Fallback - just print if notifications fail (e.g., missing dbus)
             print(f"📱 {title}: {message}")
-            print(f"(Notification error: {e})")
