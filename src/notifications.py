@@ -52,7 +52,7 @@ class NotificationManager:
                 title=title,
                 message=message,
                 app_name=self.app_name,
-                app_icon=self.app_icon,
+                app_icon="",  # Empty string instead of None
                 timeout=5,  # 5 seconds
             )
         except Exception as e:
