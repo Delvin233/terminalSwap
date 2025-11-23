@@ -1,4 +1,5 @@
 """System notifications for transaction status"""
+
 from plyer import notification
 
 
