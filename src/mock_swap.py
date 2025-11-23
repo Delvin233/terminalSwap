@@ -51,6 +51,22 @@ class MockSwapExecutor:
             ].ljust(66, "0")
 
             print(f"✅ Mock swap completed! Mock TX: {mock_tx_hash}")
+
+            # Send notification for mock swap
+            try:
+                from .notifications import NotificationManager
+
+                notifier = NotificationManager()
+                notifier.notify_swap_success(
+                    f"{amount}",
+                    from_token,
+                    f"{output_amount:.6f}",
+                    to_token,
+                    mock_tx_hash,
+                )
+            except Exception:
+                pass  # Don't fail mock swap if notification fails
+
             return mock_tx_hash
 
         except Exception as e:
