@@ -280,7 +280,9 @@ class TransactionHistory:
                 tx_type = "Send" if is_outgoing else "Receive"
 
                 # Get token info
-                token_symbol = self._clean_token_symbol(tx.get("tokenSymbol", "Unknown"))
+                token_symbol = self._clean_token_symbol(
+                    tx.get("tokenSymbol", "Unknown")
+                )
                 token_decimals = int(tx.get("tokenDecimal", 18))
 
                 # Convert token amount
@@ -325,10 +327,10 @@ class TransactionHistory:
             unique_tokens = set()
             for tx in transactions:
                 unique_tokens.add(tx["token"])
-            
+
             # Add native token for gas calculations
             unique_tokens.add(self.network_config.native_token)
-            
+
             # Fetch all prices at once with delays to avoid rate limiting
             token_prices = {}
             for token in unique_tokens:
@@ -337,6 +339,7 @@ class TransactionHistory:
                     token_prices[token] = price
                 # Small delay to avoid rate limiting
                 import time
+
                 time.sleep(0.1)
 
             total_sent = 0
@@ -348,7 +351,7 @@ class TransactionHistory:
                 token_price = token_prices.get(tx["token"])
                 if token_price:
                     usd_value = tx["amount"] * token_price
-                    
+
                     if tx["type"] == "Send":
                         total_sent += usd_value
                     else:
@@ -404,7 +407,6 @@ class TransactionHistory:
                         if (tx["from"] and tx["from"].lower() == address.lower()) or (
                             tx["to"] and tx["to"].lower() == address.lower()
                         ):
-
                             # Parse transaction
                             parsed_tx = self._parse_rpc_transaction(tx, address, wallet)
                             if parsed_tx:
@@ -479,59 +481,83 @@ class TransactionHistory:
         """Clean token symbol by normalizing Unicode characters"""
         if not symbol or symbol == "Unknown":
             return symbol
-            
+
         # Common Unicode character replacements for token symbols
         replacements = {
             # Various Unicode T characters that look like T
-            'Ť': 'T', 'Ţ': 'T', 'Ṫ': 'T', '₮': 'T',
-            # Various Unicode S characters that look like S  
-            'Ś': 'S', 'Ş': 'S', 'Š': 'S', 'Ṡ': 'S', 'Ѕ': 'S',
+            "Ť": "T",
+            "Ţ": "T",
+            "Ṫ": "T",
+            "₮": "T",
+            # Various Unicode S characters that look like S
+            "Ś": "S",
+            "Ş": "S",
+            "Š": "S",
+            "Ṡ": "S",
+            "Ѕ": "S",
             # Various Unicode D characters
-            'Ď': 'D', 'Đ': 'D', 'Ḋ': 'D',
+            "Ď": "D",
+            "Đ": "D",
+            "Ḋ": "D",
             # Various Unicode U characters
-            'Ú': 'U', 'Ù': 'U', 'Û': 'U', 'Ü': 'U', 'Ũ': 'U', 'Ū': 'U', 'Ŭ': 'U', 'Ů': 'U', 'Ű': 'U', 'Ų': 'U',
+            "Ú": "U",
+            "Ù": "U",
+            "Û": "U",
+            "Ü": "U",
+            "Ũ": "U",
+            "Ū": "U",
+            "Ŭ": "U",
+            "Ů": "U",
+            "Ű": "U",
+            "Ų": "U",
         }
-        
+
         # Apply replacements
         cleaned = symbol
         for unicode_char, ascii_char in replacements.items():
             cleaned = cleaned.replace(unicode_char, ascii_char)
-            
+
         return cleaned
 
     def discover_user_tokens(self, address: str) -> Dict[str, str]:
         """Discover tokens from user's transaction history"""
         try:
             discovered = {}
-            
+
             # Try to get raw token transaction data from API first
             raw_token_data = self._get_raw_token_transactions(address, 100)
-            
+
             for tx in raw_token_data:
                 try:
-                    token_symbol = self._clean_token_symbol(tx.get("tokenSymbol", "Unknown"))
+                    token_symbol = self._clean_token_symbol(
+                        tx.get("tokenSymbol", "Unknown")
+                    )
                     token_address = tx.get("contractAddress", "")
-                    
+
                     # Skip if we don't have both symbol and address
-                    if not token_symbol or not token_address or token_symbol == "Unknown":
+                    if (
+                        not token_symbol
+                        or not token_address
+                        or token_symbol == "Unknown"
+                    ):
                         continue
-                    
+
                     # Skip if already discovered
                     if token_symbol in discovered:
                         continue
-                        
+
                     # Add to discovered tokens
                     discovered[token_symbol] = token_address
-                    
+
                 except Exception:
                     continue
-            
+
             # If no tokens discovered via raw API (e.g., Base networks), try fallback
             if not discovered:
                 discovered = self._discover_tokens_from_parsed_history(address)
-            
+
             return discovered
-            
+
         except Exception as e:
             print(f"DEBUG: Token discovery failed: {e}")
             return {}
@@ -540,28 +566,32 @@ class TransactionHistory:
         """Fallback: discover tokens from parsed transaction history with known addresses"""
         try:
             discovered = {}
-            
+
             # Get parsed token transactions (this works on Base via token tx API)
             token_txs = self._get_token_transactions(address, 50)
-            
+
             # Known token addresses for Base network (manually curated)
             base_token_addresses = {
                 "ZORA": "0x777777777777777777777777777777777777777777",  # Need real address
-                "WCT": "0x888888888888888888888888888888888888888888",   # Need real address  
+                "WCT": "0x888888888888888888888888888888888888888888",  # Need real address
                 "delvin233": "0x999999999999999999999999999999999999999999",  # Need real address
                 # Add more as discovered
             }
-            
+
             # Extract unique token symbols from parsed transactions
             for tx in token_txs:
                 token_symbol = tx.get("token", "Unknown")
-                if token_symbol and token_symbol != "Unknown" and token_symbol not in discovered:
+                if (
+                    token_symbol
+                    and token_symbol != "Unknown"
+                    and token_symbol not in discovered
+                ):
                     # Use known address if available, otherwise skip
                     if token_symbol in base_token_addresses:
                         discovered[token_symbol] = base_token_addresses[token_symbol]
-            
+
             return discovered
-            
+
         except Exception:
             return {}
 
@@ -572,10 +602,10 @@ class TransactionHistory:
             chain_id = self.etherscan_v2_chains.get(self.network)
             if not chain_id or not self.etherscan_api_key:
                 return []
-            
+
             params = {
                 "chainid": chain_id,
-                "module": "account", 
+                "module": "account",
                 "action": "tokentx",
                 "address": address,
                 "startblock": 0,
@@ -583,16 +613,18 @@ class TransactionHistory:
                 "page": 1,
                 "offset": limit,
                 "sort": "desc",
-                "apikey": self.etherscan_api_key
+                "apikey": self.etherscan_api_key,
             }
-            
+
             # Try up to 2 times for Base networks (API can be inconsistent)
             max_retries = 2 if self.network in ["base", "base-sepolia"] else 1
-            
+
             for attempt in range(max_retries):
                 try:
-                    response = requests.get(self.etherscan_v2_url, params=params, timeout=10)
-                    
+                    response = requests.get(
+                        self.etherscan_v2_url, params=params, timeout=10
+                    )
+
                     if response.status_code == 200:
                         data = response.json()
                         if data.get("status") == "1":
@@ -600,14 +632,15 @@ class TransactionHistory:
                         elif attempt < max_retries - 1:
                             # If NOTOK and we have retries left, try again
                             import time
+
                             time.sleep(1)  # Brief delay before retry
                             continue
-                    
+
                 except Exception:
                     if attempt < max_retries - 1:
                         continue
-            
+
             return []
-            
+
         except Exception:
             return []
