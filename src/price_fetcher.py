@@ -17,13 +17,16 @@ class PriceFetcher:
                 "USDT": "tether",
                 "CELO": "celo",
                 "CUSD": "celo-dollar",
+                "cUSD": "celo-dollar",  # Support mixed case
                 "CEUR": "celo-euro",
+                "cEUR": "celo-euro",   # Support mixed case
                 "DEGEN": "degen-base",
                 "BRETT": "brett",
                 "G$": "gooddollar",
             }
 
-            token_id = token_map.get(token_symbol.upper())
+            # Try exact match first, then uppercase
+            token_id = token_map.get(token_symbol) or token_map.get(token_symbol.upper())
             if not token_id:
                 return None
 
@@ -32,7 +35,7 @@ class PriceFetcher:
                 params={"ids": token_id, "vs_currencies": "usd"},
                 timeout=5,
             )
-
+            
             if response.status_code == 200:
                 data = response.json()
                 return data.get(token_id, {}).get("usd")

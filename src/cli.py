@@ -173,6 +173,157 @@ def _show_network_balance(wallet, network):
 
     console.print(table)
 
+    # Show hint about discovering more tokens
+    if network in ["base", "base-sepolia"]:
+        console.print(
+            "\n[yellow]💡 Tip: Run 'python main.py history --network base' to see all your tokens[/yellow]"
+        )
+        console.print(
+            "[yellow]   Add any missing tokens to the configuration for balance tracking[/yellow]"
+        )
+
+
+@cli.command()
+@click.option(
+    "--network", default="base", help="Network: base, ethereum, celo, base-sepolia"
+)
+@click.option(
+    "--limit", default=20, help="Number of transactions to show (default: 20)"
+)
+@click.option(
+    "--type", "tx_type", help="Filter by type: send, receive, all (default: all)"
+)
+@click.option("--summary", is_flag=True, help="Show transaction summary statistics")
+def history(network, limit, tx_type, summary):
+    """View transaction history for your wallet
+
+    Supported networks (with Etherscan API key):
+      • ethereum, celo - Free tier supported
+      • base, base-sepolia - Requires paid Etherscan plan
+
+    Examples:
+      history --network ethereum --limit 10
+      history --network celo --type send
+      history --summary
+    """
+    from .transaction_history import TransactionHistory
+
+    try:
+        # Initialize wallet to get address
+        wallet = Wallet(network)
+        if not wallet.is_connected():
+            console.print("[red]❌ Failed to connect to network[/red]")
+            return
+
+        console.print(
+            f"[yellow]📜 Fetching transaction history for {network.upper()}...[/yellow]"
+        )
+        console.print(f"[blue]Address: {wallet.address}[/blue]")
+
+        # Get transaction history
+        tx_history = TransactionHistory(network)
+
+        if summary:
+            # Show summary statistics
+            stats = tx_history.get_transaction_summary(wallet.address)
+            _show_transaction_summary(stats, network)
+        else:
+            # Show transaction list
+            transactions = tx_history.get_transaction_history(wallet.address, limit)
+
+            # Filter by type if specified
+            if tx_type and tx_type.lower() in ["send", "receive"]:
+                filter_type = tx_type.capitalize()
+                transactions = [tx for tx in transactions if tx["type"] == filter_type]
+
+            if not transactions:
+                console.print("[yellow]No transactions found.[/yellow]")
+                return
+
+            _show_transaction_history(transactions, network)
+
+    except Exception as e:
+        console.print(f"[red]❌ Error: {e}[/red]")
+
+
+def _show_transaction_summary(stats: dict, network: str):
+    """Display transaction summary statistics"""
+    table = Table(title=f"📊 Transaction Summary - {network.upper()}")
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", style="green")
+
+    table.add_row("Total Transactions", str(stats["total_transactions"]))
+    table.add_row("Total Sent", f"${stats['total_sent_usd']:.2f}")
+    table.add_row("Total Received", f"${stats['total_received_usd']:.2f}")
+    table.add_row("Gas Fees Paid", f"${stats['total_gas_spent_usd']:.2f}")
+
+    net_flow = stats["net_flow_usd"]
+    net_color = "green" if net_flow >= 0 else "red"
+    net_symbol = "+" if net_flow >= 0 else ""
+    table.add_row("Net Flow", f"[{net_color}]{net_symbol}${net_flow:.2f}[/{net_color}]")
+
+    console.print(table)
+
+
+def _show_transaction_history(transactions: list, network: str):
+    """Display transaction history in a table"""
+    table = Table(title=f"📜 Transaction History - {network.upper()}")
+    table.add_column("Date", style="blue")
+    table.add_column("Type", style="cyan")
+    table.add_column("Token", style="yellow")
+    table.add_column("Amount", style="green")
+    table.add_column("USD Value", style="magenta")
+    table.add_column("From/To", style="white")
+    table.add_column("Status", style="green")
+
+    for tx in transactions:
+        # Format amount
+        if tx["amount"] < 0.000001:
+            amount_str = f"{tx['amount']:.8f}"
+        elif tx["amount"] < 0.01:
+            amount_str = f"{tx['amount']:.6f}"
+        else:
+            amount_str = f"{tx['amount']:.4f}"
+
+        # Format USD value
+        usd_str = f"${tx['usd_value']:.2f}" if tx["usd_value"] > 0 else "N/A"
+
+        # Format address (show counterparty)
+        if tx["type"] == "Send":
+            address_str = f"→ {tx['to'][:6]}...{tx['to'][-4:]}"
+            type_color = "red"
+        else:
+            address_str = f"← {tx['from'][:6]}...{tx['from'][-4:]}"
+            type_color = "green"
+
+        # Status color
+        status_color = "green" if tx["status"] == "Success" else "red"
+
+        table.add_row(
+            tx["date"],
+            f"[{type_color}]{tx['type']}[/{type_color}]",
+            tx["token"],
+            amount_str,
+            usd_str,
+            address_str,
+            f"[{status_color}]{tx['status']}[/{status_color}]",
+        )
+
+    console.print(table)
+
+    # Show explorer links
+    explorer_urls = {
+        "base": "https://basescan.org/address/",
+        "base-sepolia": "https://sepolia.basescan.org/address/",
+        "ethereum": "https://etherscan.io/address/",
+        "celo": "https://celoscan.io/address/",
+    }
+
+    if network in explorer_urls:
+        wallet = Wallet(network)
+        explorer_url = explorer_urls[network] + wallet.address
+        console.print(f"\n[blue]🔗 View full history: {explorer_url}[/blue]")
+
 
 @cli.command()
 @click.argument("amount", type=float)

@@ -15,6 +15,7 @@ Swapping and transferring crypto through the terminal - inspired by Primeagen's 
 ## Quick Start
 
 ### 1. Setup Environment
+
 ```bash
 # Create virtual environment
 python -m venv venv
@@ -25,6 +26,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. Configure Wallet & RPC
+
 ```bash
 # Copy environment template
 cp .env.example .env
@@ -35,6 +37,7 @@ cp .env.example .env
 ```
 
 ### 3. Get API Keys (Optional but Recommended)
+
 1. Visit [Alchemy](https://alchemy.com) and create free account
 2. Create apps for:
    - Base Mainnet
@@ -43,12 +46,14 @@ cp .env.example .env
 3. Copy API keys to `.env` file
 
 **Benefits of API keys:**
+
 - No rate limiting
-- Faster responses  
+- Faster responses
 - More reliable connections
 - Better for DEX quotes
 
 ### 4. Usage
+
 ```bash
 # Portfolio tracking
 python main.py balance              # Check Base network
@@ -58,6 +63,11 @@ python main.py balance --network ethereum
 # Token transfers
 python main.py send 0.01 ETH to 0x1234...5678 --network base-sepolia --preview
 python main.py send 10 USDC to 0x1234...5678 --network base
+
+# Transaction history
+python main.py history --network ethereum --limit 10  # Recent transactions
+python main.py history --network celo --summary        # Transaction statistics
+python main.py history --network ethereum --type send  # Filter by type
 
 # Swap preview (safe)
 python main.py swap 0.1 ETH to USDC --preview
@@ -84,14 +94,15 @@ See [SECURITY.md](SECURITY.md) for important security guidelines.
 
 ### Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `PRIVATE_KEY` | Yes | Your wallet private key |
-| `BASE_RPC_URL` | No | Alchemy API for Base (recommended) |
-| `BASE_SEPOLIA_RPC_URL` | No | Alchemy API for Base Sepolia testing |
-| `ETHEREUM_RPC_URL` | No | Alchemy API for Ethereum (recommended) |
+| Variable               | Required | Description                            |
+| ---------------------- | -------- | -------------------------------------- |
+| `PRIVATE_KEY`          | Yes      | Your wallet private key                |
+| `BASE_RPC_URL`         | No       | Alchemy API for Base (recommended)     |
+| `BASE_SEPOLIA_RPC_URL` | No       | Alchemy API for Base Sepolia testing   |
+| `ETHEREUM_RPC_URL`     | No       | Alchemy API for Ethereum (recommended) |
 
 ### Example .env
+
 ```bash
 PRIVATE_KEY=0x1234567890abcdef...
 BASE_RPC_URL=https://base-mainnet.g.alchemy.com/v2/YOUR_API_KEY
@@ -107,7 +118,7 @@ ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY
 - [x] DEX integration (Uniswap V3)
 - [x] Token swapping with safety features
 - [x] Testnet support (Base Sepolia with mock swaps)
+- [x] Transaction history with filtering and statistics
 - [ ] Interactive TUI mode
-- [ ] Transaction history
 - [ ] Hardware wallet support
 - [ ] Real DEX swaps on testnets

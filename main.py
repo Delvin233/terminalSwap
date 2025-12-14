@@ -16,6 +16,9 @@ if __name__ == "__main__":
         print("\n🔄 Swap preview:")
         print("  python main.py swap 0.1 ETH to USDC --preview")
         print("  python main.py swap 10 CELO to G$ --network celo --preview")
+        print("\n📜 Transaction history:")
+        print("  python main.py history --network base --limit 10")
+        print("  python main.py history --summary")
         print("\n📚 More help: python main.py --help")
         print("\n⚠️  Interactive TUI mode coming soon!")
     else:
